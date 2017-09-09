@@ -12,7 +12,7 @@ endf
 let g:popup_loaded = 1
 
 if !exists('g:popup#arrow')
-    let g:popup#arrow = ' ➤ '
+    let g:popup#arrow = ' -> '
 endif
 if !exists('g:popup#upkey')
     let g:popup#upkey = "\<bs>"

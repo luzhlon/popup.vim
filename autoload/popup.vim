@@ -53,7 +53,6 @@ fun! popup#popup(key)
     call s:enterMenu(s:Names[a:key], m)
     let s:last = ''
     while 1
-        redraw
         let key = s:popup()                 " show the menu's content
         if key == g:popup#upkey
             call s:leaveMenu()
@@ -74,13 +73,19 @@ fun! popup#popup(key)
         endif
     endw
     if empty(s:last)
-        call timer_start(1, {id->execute('redraw')})
+        let l = line('.') | let c = col('.')
+        call timer_start(5, {id->cursor(l,c)})
     endif
-    echo ''
     return s:last
 endf
-" Popup the prompt
-fun! s:echoMenu()
+" Popup the menu, and return user's input
+fun! s:popup()
+    redraw
+    "store options
+    let [lz, ch, ut] = [&lz, &ch, &ut]
+    set nolazyredraw
+    set ut=100000000
+    " Popup the prompt {{{ "
     let [i, l, n] = [0, [], len(s:stack)]
     while i < n
         call add(l, s:stack[i])
@@ -119,20 +124,12 @@ fun! s:echoMenu()
         endif
     endfo
     echoh None
-endf
-" Popup the menu, and return user's input
-fun! s:popup()
-    redraw
-    "store options
-    let [lz, ch, ut] = [&lz, &ch, &ut]
-    set nolazyredraw
-    set ut=100000000
-    " echo prompt for menu
-    call s:echoMenu()
+    " }}} Popup the prompt "
     " get the user's input
     let c = getchar()
     "restore options
     let [&lz, &ch, &ut] = [lz, ch, ut]
+    echo "\r" | redraw
     return type(c) == v:t_number ? nr2char(c) : c
 endf
 " Enter a menu: push it's name and items to top of stack
