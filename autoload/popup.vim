@@ -169,7 +169,7 @@ endif
 fun! s:findItem(key)
     let c = s:stripAlt(a:key)
     for item in s:curMenu()
-        if type(item) == v:t_list && item[0] == c
+        if type(item) == v:t_list && item[0] ==# c
             return item
         endif
     endfo
