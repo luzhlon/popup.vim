@@ -9,19 +9,17 @@
 fun! s:prompt() dict
     let stack_names = [self.name]
     let stack_items = [self.items]
+    let flag = ''
 
     while 1
         let items = stack_items[-1]
         call s:echo_prompt(stack_names, items)
         let key = s:strip_alt(getchar())
-        if key == g:popup#upkey
+        if key == g:popup.upkey
             " Leave menu
-            if len(stack_names) > 1
-                call remove(stack_names, -1)
-                call remove(stack_items, -1)
-            else
-                return
-            endif
+            if len(stack_names) < 2 | return | endif
+            call remove(stack_names, -1)
+            call remove(stack_items, -1)
             continue
         endif
 
@@ -29,12 +27,14 @@ fun! s:prompt() dict
         if empty(item) | break | endif
         let [k, n, C] = item                " key, name, command
 
+        if len(k) > 1 | let flag = k[1] | endif
+
         let t = type(C)
         if t == v:t_list                    " Enter submenu
             call add(stack_names, n)
             call add(stack_items, C)
         else
-            return t == v:t_func ? C(): C
+            return [t == v:t_func ? C(): C, flag]
         endif
     endw
 endf
@@ -51,7 +51,7 @@ fun! s:popup(...) dict
 
     " Restore options
     let [&lz, &ch, &ut] = [lz, ch, ut]
-    echo "\r" | redraw
+    echo "\r"
 
     return ret
 endf
@@ -67,7 +67,7 @@ fun! s:echo_prompt(names, items)
     echo ''
     let &cmdheight = len(a:items) + 1
     " Echo the menu names
-    echoh Boolean | echon join(a:names, g:popup#arrow) ':'
+    echoh Boolean | echon join(a:names, g:popup.arrow) ':'
     " count the maximum length of item's names
     let maxnamelen = 0
     for item in a:items
@@ -82,18 +82,18 @@ fun! s:echo_prompt(names, items)
             continue
         endif
         let [k, n, C] = item                " key, name, command
-        echoh Type
-        echon '  ' . n . repeat(' ', maxnamelen - strdisplaywidth(n) + 1)
-        echoh Normal | echon '('
+        echoh Normal | echon '  ['
         echoh Underlined  | echon printf('%2S', strtrans(k))
-        echoh Normal | echon ')'
+        echoh Normal | echon "]\t"
+        echoh Type | echon n
+        echon repeat(' ', maxnamelen - strdisplaywidth(n) + 1) "\t"
         let t = type(C)
         if t == v:t_dict || t == v:t_list   " Submenu
-            echoh WarningMsg | echon "\t\t>"
+            echoh WarningMsg | echon '>'
         elseif t == v:t_func                " Function
-            echoh Include | echon "\t\t" . string(C)
+            echoh Include | echon string(C)
         else                                " Command
-            echoh Function | echon "\t\t" . strtrans(C)
+            echoh Function | echon strtrans(C)
         endif
     endfo
     echoh None
@@ -109,14 +109,20 @@ endf
 " }}}
 
 " Find a item {{{
-fun! s:find_item(items, k)
+fun! s:find_item(items, key)
     for item in a:items
-        if type(item) == v:t_list && item[0] ==# a:k
+        if type(item) == v:t_list && item[0][0] ==# a:key
             return item
         endif
     endfo
 endf
 " }}}
+
+fun! s:copy() dict
+    let another = copy(self)
+    let another.items = copy(self.items)
+    return another
+endf
 
 " Strip the ALT-key {{{
 if has('nvim')
@@ -142,6 +148,7 @@ fun! pmenu#new(name, ...)
         \ 'popup': funcref('s:popup'),
         \ 'prompt': funcref('s:prompt'),
         \ 'merge': funcref('s:merge'),
+        \ 'copy': funcref('s:copy'),
         \ 'add_item': funcref('s:add_item'),
         \ }
 endf

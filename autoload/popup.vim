@@ -5,7 +5,12 @@
 " Last Change:  2017/8/1
 " =============================================================================
 
-let s:last  = ''            " The last command user selected
+let g:popup.menus = {}
+let g:popup.ftmenus = {}
+let g:popup.last = ['', '']
+
+let s:menus = g:popup.menus
+let s:ftmenus = g:popup.ftmenus
 
 if !exists('g:popup_menus')
     let g:popup_menus = {}
@@ -13,50 +18,98 @@ endif
 
 " The last menu-item user selected
 fun! popup#last()
-    return s:last
+    let [cmd, flag] = g:popup.last
+    " echom cmd flag
+    if flag == ':'
+        call timer_start(1, {->execute(cmd)})
+        return s:nop()
+    else
+        call feedkeys(cmd, flag == '!' ? 'n': '')
+        return ''
+    endif
 endf
 
 " Combine the buffer's menu and the top menu
 fun! popup#get(key)
-    let d = 0
+    let M = 0
     if exists('b:popup_menus') && has_key(b:popup_menus, a:key)
-        let d = b:popup_menus
-    elseif has_key(g:popup_menus, a:key)
-        let d = g:popup_menus
-    else
-        return
+        let M = b:popup_menus[a:key].copy()
     endif
 
-    let Ret = d[a:key]
-    if type(Ret) != v:t_dict
-        let Ret = call(Ret, [])
-        let d[a:key] = Ret
+    if has_key(s:ftmenus, &ft) && has_key(s:ftmenus[&ft], a:key)
+        let m = s:ftmenus[&ft][a:key]
+        let M = empty(M) ? m.copy() : M.merge(m)
     endif
-    return Ret
+
+    if has_key(s:menus, a:key)
+        let m = s:menus[a:key]
+        let M = empty(M) ? m.copy() : M.merge(m)
+    endif
+
+    return M
+endf
+
+fun! s:nop()
+    let ch = "\<F12>"
+    if mode() =~ '[Ric].\?'
+        let ch = "\<c-r>\<esc>"
+    elseif mode() =~ 'n.\?'
+        let ch = "\<ESC>"
+    endif
+    call feedkeys(ch, 'n') | return ''
+endf
+
+fun! s:load(key)
+    let name = split(a:key, '#')[0]
+    exe 'runtime' 'pmenu/'.name.'.vim'
 endf
 
 " Popup the specific menu by key
 fun! popup#(key, ...)
-    let m = 0
-    if type(a:key) == v:t_dict && type(a:key.popup) == v:t_func
-        let m = a:0 ? call(function('pmenu#merge'), [a:key] + a:000): a:key
-    elseif type(a:key) == v:t_string
-        let m = popup#get(a:key)
+    let M = popup#get(a:key)
+    if empty(M) | call s:load(a:key) | endif
+    let M = popup#get(a:key)
+
+    if empty(M)
+        echoe 'Can not find popup menu:' a:key
+        return s:nop()
+    endif
+
+    let last = M.popup()
+    if empty(last)
+        return s:nop()
     else
-        throw 'Wrong argument'
-        return ''
+        let g:popup.last = last
+        return popup#last()
     endif
+endf
 
-    if empty(m)
-        echoe 'Can not find the menu:' a:key
-        return ''
+fun! popup#reg(key, menu, ...) abort
+    call s:checkmenu(a:menu)
+    if a:0
+        let ft = a:1
+        if !has_key(s:ftmenus, ft)
+            let s:ftmenus[ft] = {}
+        endif
+        let s:ftmenus[ft][a:key] = a:menu
+        if !has_key(s:menus, a:key)
+            call s:load(a:key)
+        endif
+    else
+        let s:menus[a:key] = a:menu
     endif
+endf
 
-    let l = line('.') | let c = col('.')
-    let s:last = m.popup()
-    if empty(s:last)
-        let s:last = ''
-        call timer_start(50, {id->cursor(l,c)})
+fun! s:checkmenu(menu) abort
+    call assert_true(type(a:menu) == v:t_dict
+                \ && has_key(a:menu, 'popup'),
+                \ 'Not a valid menu')
+endf
+
+fun! popup#menus(...)
+    if a:0
+        return get(g:popup.ftmenus, a:1, {})
+    else
+        return g:popup.menus
     endif
-    return s:last
 endf

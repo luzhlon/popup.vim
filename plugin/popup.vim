@@ -7,10 +7,15 @@
 
 let g:popup_loaded = 1
 
-if !exists('g:popup#arrow')
-    let g:popup#arrow = ' -> '
+if !exists('g:popup')
+    let g:popup = {}
 endif
 
-if !exists('g:popup#upkey')
-    let g:popup#upkey = "\<esc>"
+if !has_key(g:popup, 'upkey')
+    let g:popup.upkey = "\<c-h>"
 endif
+
+if !has_key(g:popup, 'arrow')
+    let g:popup.arrow = ' -> '
+endif
+
