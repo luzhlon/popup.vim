@@ -144,7 +144,7 @@ endif
 " Create a new popup menu {{{
 fun! pmenu#new(name, ...)
     return {
-        \ 'name': a:name, 'items': a:000,
+        \ 'name': a:name, 'items': copy(a:000),
         \ 'popup': funcref('s:popup'),
         \ 'prompt': funcref('s:prompt'),
         \ 'merge': funcref('s:merge'),
