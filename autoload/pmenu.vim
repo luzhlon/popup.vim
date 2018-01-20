@@ -74,6 +74,8 @@ fun! s:echo_prompt(names, items)
         let n = strdisplaywidth(item[1])
         let maxnamelen = n > maxnamelen ? n : maxnamelen
     endfo
+    let restlen = &columns - 8 - maxnamelen - 4
+    if restlen < 0 | let restlen = 0 | endif
     " show the menu's items
     for item in a:items
         echon "\n"
@@ -83,17 +85,17 @@ fun! s:echo_prompt(names, items)
         endif
         let [k, n, C] = item                " key, name, command
         echoh Normal | echon '  ['
-        echoh Underlined  | echon printf('%2S', strtrans(k))
-        echoh Normal | echon "]\t"
+        echoh Underlined  | echon printf('%2S', strtrans(k[0]))
+        echoh Normal | echon ']  '
         echoh Type | echon n
-        echon repeat(' ', maxnamelen - strdisplaywidth(n) + 1) "\t"
+        echon repeat(' ', maxnamelen - strdisplaywidth(n) + 2)
         let t = type(C)
         if t == v:t_dict || t == v:t_list   " Submenu
             echoh WarningMsg | echon '>'
         elseif t == v:t_func                " Function
-            echoh Include | echon string(C)
+            echoh Include | echon string(C)[:restlen]
         else                                " Command
-            echoh Function | echon strtrans(C)
+            echoh Function | echon strtrans(C)[:restlen]
         endif
     endfo
     echoh None
