@@ -1,0 +1,161 @@
+popup.txt               Nvim or vim8
+
+Version: 1.0
+Author:  luzhlon <luzhlon@outlook.com>
+
+=========================================================================
+CONTENTS 						*popup-contents*
+
+Introduction		|popup-introduction|
+Usage			|popup-usage|
+Install			|popup-install|
+Interface		|popup-interface|
+  Functions		  |popup-functions|
+  Variables		  |popup-variables|
+  Options		  |popup-options|
+Configuration Examples	|popup-examples|
+FAQ			|popup-faq|
+Compatibility		|popup-compatibility|
+
+==============================================================================
+INTRODUCTION					    *popup-introduction*
+popup.vim provides visual keyboard-mapping like a menu in GUI. You can use it
+as common keyboard mappings(visually), or you can use it to store some complex
+operations.
+
+==============================================================================
+USAGE       					    *popup-usage*
+
+	See |popup-examples|
+
+==============================================================================
+INTERFACE					    *popup-interface*
+
+------------------------------------------------------------------------------
+FUNCTIONS					    *popup-functions*
+
+pmenu#new({name}, {items}...)			    *pmenu#new()*
+		Create a popup-menu, return a |pmenu-object|.
+		See also |popup-examples|.
+
+		{name} is the menu's name to show.
+		{itmes} is some item of a menu. Per item is a list to describe
+		    a menu-item. see |pmenu-item|
+
+popup#reg({id}, {pmenu} [, {ft}])		    *popup#reg()*
+		Register a popup-menu by {id}.
+
+		{id} is a string like a autoload-function.
+		    For example, "edit#n", "file". It can implement the
+		    delayed-loading for a popup-menu.
+		{pmenu} is a object returned by |pmenu#new()|
+		{ft} is a name of filetype. Default {pmenu} is registered in
+			global namespace, if {ft} is specified, then it will
+			show in the buffer whoes 'ft' option is {ft}.
+
+popup#({id})					    *popup#()*
+		As a |:map-<expr>|, used for defining key-mapping.
+		User can use the key-mapping to popup the menu registered by
+		{id}.  For example, >
+		    nmap <expr><space> popup#('util#n')
+<
+popup#last()					    *popup#last()*
+		As a |:map-<expr>|, do the menu-item's action last selected by
+		user.  For example, >
+		    map  <expr><m-.> popup#last()
+		    map! <expr><m-.> popup#last()
+<
+
+						    *pmenu-item*
+pmenu-item
+	    Per menu item is a list like this >
+		    [key, name, map]
+<
+	    "key" is a character that user can press it to trigger the
+		menu-item, and you can append a modifier character after "key".
+		A modifier character can be ":", "!".
+		":" means the "map" field is a command rather than a map.
+		"!" means the "map" is a noremap, not |recursive_mapping|.
+	    "name" is a string, describe the menu-item.
+	    "map" is a string, as a |key-mapping| or a command.
+	    "map" is a list contains some |pmenu-item|, it is a submenu.
+	    "map" is a function, it's returned value as the |key-mapping|
+
+	    See also |popup-examples|.
+
+						    *pmenu-object*
+
+pmenu.popup()
+	    Popup the pmenu, return "[map, modifier-character]".
+	    If user canceled the menu, return 0
+
+pmenu.merge({pmenu})				    *pmenu.merge()*
+	    Merge the {pmenu}'s items to self.
+
+pmenu.copy()					    *pmenu.copy()*
+	    Copy self, return a {pmenu}.
+
+pmenu.add_item({char}, {desc}, {map})		    *pmenu.copy()*
+	    Add a menu-item to this menu. Arguments like |pmenu-item|.
+	    
+
+------------------------------------------------------------------------------
+VARIABLES					    *popup-variables*
+
+						   *g:popup.arrow*
+g:popup.arrow
+	    The arrow characters between multiple level menus.
+	    Default: " -> "
+
+						   *g:popup.upkey*
+g:popup.upkey
+	    The key to goto uplevel menu.
+	    Default: "\<c-h>"
+
+------------------------------------------------------------------------------
+OPTIONS  					    *popup-options*
+
+==============================================================================
+EXAMPLES 					    *popup-examples*
+>
+	call popup#reg('window', pmenu#new('Window & Buffer',
+	    \ ['o:', 'New tabpage', 'tabe'],
+	    \ ['x:', 'Close tabpage', 'tabc'],
+	    \ ['p!', 'Prev tabpage', 'gT'],
+	    \ ['n!', 'Next tabpage', 'gt'],
+	    \ '------------------------------',
+	    \ ['w', 'Wipe', "\<c-w>\<c-u>"],
+	    \ ['s:', 'Resize',  'call ResizeWindow()'],
+	    \ ['c', 'Copy buffer', "ggVGy:bot sp ene!\<cr>Vp"]
+	\ ))
+
+	call popup#reg('util#n', pmenu#new('Util',
+	    \ [' ', 'Common', [
+		\ ["\t:", 'NERDTreeToggle', 'NERDTreeToggle'],
+		\ ["\r:", 'NERDTreeFind', 'NERDTreeFind'],
+		\ [' !', 'No hilight', ":noh\<cr>"],
+		\ ['.!', 'Do last command', '@:'],
+		\ ['l',  'Open URL', 'gx'],
+	    \ ]],
+	    \ ["\t:", 'Tools', [
+		\ ['c', 'cmd.exe', "call open#cmd()"],
+		\ ['b', 'bash', "call open#bash()"],
+		\ ['d', 'File directory', "call open#curdir()"],
+		\ ['r', 'Reopen vim', "call open#reopen()"],
+		\ ['e', 'Explorer', "call open#explorer(expand('%:p'))"],
+		\ ['.', 'File under cursor', "call open#cur_file()"],
+		\ [',', 'Bash', has('nvim') ? 'winc s | term bash': 'terminal bash'],
+	    \ ]],
+	\ ))
+
+	nmap <expr><m-w> popup#('window')
+	nmap <expr><space> popup#('util#n')
+>
+
+==============================================================================
+FAQ					            *popup-faq*
+
+==============================================================================
+COMPATIBILITY					    *popup-compatibility*
+
+vim:tw=78:ts=8:ft=help:norl:noet:fen:

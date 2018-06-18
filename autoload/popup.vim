@@ -22,10 +22,10 @@ fun! popup#last()
     " echom cmd flag
     if flag == ':'
         call timer_start(1, {->execute(cmd)})
-        return s:nop()
+        return popup#nop()
     else
         call feedkeys(cmd, flag == '!' ? 'n': '')
-        return ''
+        return empty(cmd) ? popup#nop(): ''
     endif
 endf
 
@@ -49,13 +49,15 @@ fun! popup#get(key)
     return M
 endf
 
-fun! s:nop()
+" Send a key, cause the UI update, but not change anything
+fun! popup#nop()
     let ch = "\<F12>"
     if mode() =~ '[Ric].\?'
         let ch = "\<c-r>\<esc>"
     elseif mode() =~ 'n.\?'
         let ch = "\<ESC>"
     endif
+    redraw
     call feedkeys(ch, 'n') | return ''
 endf
 
@@ -72,12 +74,12 @@ fun! popup#(key, ...)
 
     if empty(M)
         echoe 'Can not find popup menu:' a:key
-        return s:nop()
+        return popup#nop()
     endif
 
     let last = M.popup()
     if empty(last)
-        return s:nop()
+        return popup#nop()
     else
         let g:popup.last = last
         return popup#last()
@@ -112,4 +114,22 @@ fun! popup#menus(...)
     else
         return g:popup.menus
     endif
+endf
+
+fun! popup#getch()
+    let ch = getchar()
+    return type(ch) == v:t_number ? nr2char(ch): ch
+endf
+
+fun! popup#list(prompt)
+    let cache = split(a:prompt, '&', 1)
+    echon "\r" cache[0]
+    call remove(cache, 0)
+    for str in cache
+        echoh Underlined | echon str[0:0]
+        echoh None | echon str[1:]
+    endfor
+    let ret = popup#getch()
+    call popup#nop()
+    return ret
 endf
