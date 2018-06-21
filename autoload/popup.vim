@@ -5,6 +5,16 @@
 " Last Change:  2017/8/1
 " =============================================================================
 
+let g:popup = exists('g:popup') ? g:popup : {}
+
+if !has_key(g:popup, 'upkey')
+    let g:popup.upkey = "\<c-h>"
+endif
+
+if !has_key(g:popup, 'arrow')
+    let g:popup.arrow = ' -> '
+endif
+
 let g:popup.menus = {}
 let g:popup.ftmenus = {}
 let g:popup.last = ['', '']
