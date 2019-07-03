@@ -1,3 +1,6 @@
+
+Deprecated. Please use [guider.nvim](https://github.com/luzhlon/guider.nvim)
+
 # popup.vim
 
 popup.vim可以让vim在底部弹出你自己定义的菜单，并通过按键触发相应的命令。
