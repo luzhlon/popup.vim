@@ -1,5 +1,5 @@
 
-Deprecated. Please use [guider.nvim](https://github.com/luzhlon/guider.nvim)
+# Deprecated. Please use [guider.nvim](https://github.com/luzhlon/guider.nvim)
 
 # popup.vim
 
